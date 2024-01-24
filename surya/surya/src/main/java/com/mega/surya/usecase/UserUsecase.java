@@ -5,8 +5,7 @@ import com.mega.surya.models.UserDetail;
 import com.mega.surya.models.UserJob;
 import com.mega.surya.models.request.LoginRequest;
 import com.mega.surya.models.request.UserRequest;
-import com.mega.surya.models.response.ResponseInfo;
-import com.mega.surya.models.response.ResponseInfoLogin;
+import com.mega.surya.models.response.*;
 import com.mega.surya.repository.UserDetailRepository;
 import com.mega.surya.repository.UserJobRepository;
 import com.mega.surya.repository.UserRepository;
@@ -101,9 +100,46 @@ public class UserUsecase {
             String tokenTemp = extractTokenFromAuthorizationHeader(token);
             String username = jwtTokenProvider.extractUsername(tokenTemp);
 
+            List<UserDto> userDTOs = new ArrayList<>();
             List<User> users = this.userRepository.findByIsActive(true);
 
-            responseInfo.setSuccess(users);
+            for (User user : users) {
+                UserDto userDTO = new UserDto();
+                userDTO.setId(user.getId());
+                userDTO.setUsername(user.getUsername());
+
+                UserDetail userDetail = userDetailRepository.findByUserId(user.getId()).orElse(null);
+                if (userDetail != null) {
+                    UserDetailDto detailDTO = new UserDetailDto();
+                    detailDTO.setFirstName(userDetail.getFirstName());
+                    detailDTO.setLastName(userDetail.getLastName());
+                    userDTO.setDetail(detailDTO);
+                }
+
+                List<UserJob> userJobs = userJobRepository.findByUserId(user.getId());
+                List<UserJobDto> jobDTOs = new ArrayList<>();
+                for (UserJob job : userJobs) {
+                    UserJobDto jobDTO = new UserJobDto();
+                    jobDTO.setName(job.getName());
+                    jobDTO.setStartAt(job.getStartAt());
+                    jobDTO.setUntilAt(job.getEndAt());
+                    jobDTOs.add(jobDTO);
+                }
+                userDTO.setJobs(jobDTOs);
+
+                userDTO.setCreatedBy(user.getCreatedBy());
+                userDTO.setCreatedAt(user.getCreatedAt());
+                userDTO.setUpdatedBy(user.getUpdatedBy());
+                userDTO.setUpdatedAt(user.getUpdatedAt());
+                userDTO.setDeletedBy(user.getDeletedBy());
+                userDTO.setDeletedAt(user.getDeletedAt());
+
+                userDTOs.add(userDTO);
+            }
+
+
+
+            responseInfo.setSuccess(userDTOs);
         }
         catch (Exception e)
         {
@@ -162,41 +198,41 @@ public class UserUsecase {
                     Date.from(Instant.now())
                     );
 
-            UserDetail userDetail = new UserDetail(userRequest.getUserDetail().getId(),
-                    userRequest.getId(),
-                    user,
-                    userRequest.getUserDetail().getFirstName(),
-                    userRequest.getUserDetail().getLastName(),
-                    userLogin.get().getId(),
-                    Date.from(Instant.now()),
-                    userLogin.get().getId(),
-                    Date.from(Instant.now()),
-                    userLogin.get().getId(),
-                    Date.from(Instant.now())
-            );
+//            UserDetail userDetail = new UserDetail(userRequest.getUserDetail().getId(),
+//                    userRequest.getId(),
+//                    user,
+//                    userRequest.getUserDetail().getFirstName(),
+//                    userRequest.getUserDetail().getLastName(),
+//                    userLogin.get().getId(),
+//                    Date.from(Instant.now()),
+//                    userLogin.get().getId(),
+//                    Date.from(Instant.now()),
+//                    userLogin.get().getId(),
+//                    Date.from(Instant.now())
+//            );
 
             this.userRepository.save(user);
-            this.userDetailRepository.save(userDetail);
+//            this.userDetailRepository.save(userDetail);
 
-            for(int i=0;i<userRequest.getUserJobs().size(); i++)
-            {
-                UserJob userJob = new UserJob(
-                        userRequest.getUserJobs().get(i).getId(),
-                        userRequest.getId(),
-                        user,
-                        userRequest.getUserJobs().get(i).getName(),
-                        userRequest.getUserJobs().get(i).getStartAt(),
-                        userRequest.getUserJobs().get(i).getEndAt(),
-                        userLogin.get().getId(),
-                        Date.from(Instant.now()),
-                        userLogin.get().getId(),
-                        Date.from(Instant.now()),
-                        userLogin.get().getId(),
-                        Date.from(Instant.now())
-                );
-
-                this.userJobRepository.save(userJob);
-            }
+//            for(int i=0;i<userRequest.getUserJobs().size(); i++)
+//            {
+//                UserJob userJob = new UserJob(
+//                        userRequest.getUserJobs().get(i).getId(),
+//                        userRequest.getId(),
+//                        user,
+//                        userRequest.getUserJobs().get(i).getName(),
+//                        userRequest.getUserJobs().get(i).getStartAt(),
+//                        userRequest.getUserJobs().get(i).getEndAt(),
+//                        userLogin.get().getId(),
+//                        Date.from(Instant.now()),
+//                        userLogin.get().getId(),
+//                        Date.from(Instant.now()),
+//                        userLogin.get().getId(),
+//                        Date.from(Instant.now())
+//                );
+//
+//                this.userJobRepository.save(userJob);
+//            }
 
             responseInfo.setSuccess();
 
